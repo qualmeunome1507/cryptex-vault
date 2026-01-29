@@ -6,7 +6,7 @@ import { encryptFile, decryptFile } from './crypto'
 export default function App() {
     const [mode, setMode] = useState<'encrypt' | 'decrypt'>('encrypt')
     const [password, setPassword] = useState('')
-    const [file, setFile] = useState<File | null>(null)
+    const [files, setFiles] = useState<File[]>([])
     const [showPassword, setShowPassword] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
@@ -33,35 +33,36 @@ export default function App() {
     const passwordStrength = getPasswordStrength(password)
 
     const handleAction = async () => {
-        if (!file || !password) return
+        if (files.length === 0 || !password) return
 
         setIsProcessing(true)
         setStatus(null)
 
         try {
-            if (mode === 'encrypt') {
-                const encryptedBlob = await encryptFile(file, password)
-                const url = URL.createObjectURL(encryptedBlob)
-                const link = document.createElement('a')
-                link.href = url
-                link.download = `${file.name}.ctx`
-                document.body.appendChild(link)
-                link.click()
-                document.body.removeChild(link)
-                URL.revokeObjectURL(url)
-                setStatus({ type: 'success', message: 'Arquivo criptografado com sucesso!' })
-            } else {
-                const decryptedFile = await decryptFile(file, password, file.name.replace('.ctx', ''), 'application/octet-stream')
-                const url = URL.createObjectURL(decryptedFile)
-                const link = document.createElement('a')
-                link.href = url
-                link.download = decryptedFile.name
-                document.body.appendChild(link)
-                link.click()
-                document.body.removeChild(link)
-                URL.revokeObjectURL(url)
-                setStatus({ type: 'success', message: 'Arquivo decriptografado com sucesso!' })
+            for (const file of files) {
+                if (mode === 'encrypt') {
+                    const encryptedBlob = await encryptFile(file, password)
+                    const url = URL.createObjectURL(encryptedBlob)
+                    const link = document.createElement('a')
+                    link.href = url
+                    link.download = `${file.name}.ctx`
+                    document.body.appendChild(link)
+                    link.click()
+                    document.body.removeChild(link)
+                    URL.revokeObjectURL(url)
+                } else {
+                    const decryptedFile = await decryptFile(file, password, file.name.replace('.ctx', ''), 'application/octet-stream')
+                    const url = URL.createObjectURL(decryptedFile)
+                    const link = document.createElement('a')
+                    link.href = url
+                    link.download = decryptedFile.name
+                    document.body.appendChild(link)
+                    link.click()
+                    document.body.removeChild(link)
+                    URL.revokeObjectURL(url)
+                }
             }
+            setStatus({ type: 'success', message: `${files.length} arquivo(s) processado(s) com sucesso!` })
         } catch (err: any) {
             setStatus({ type: 'error', message: err.message || 'Ocorreu um erro inesperado.' })
         } finally {
@@ -99,14 +100,29 @@ export default function App() {
                     <div className="input-group">
                         <label htmlFor="file-upload" className="drop-zone">
                             <FileUp className="drop-icon" />
-                            <span>{file ? file.name : 'Selecione ou arraste um arquivo'}</span>
+                            <span>{files.length > 0 ? `${files.length} arquivo(s) selecionado(s)` : 'Selecione ou arraste até 3 arquivos'}</span>
+                            <span className="limit-notice">(Máximo de 3 arquivos por vez)</span>
                             <input
                                 id="file-upload"
                                 type="file"
-                                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                                multiple
+                                onChange={(e) => {
+                                    const selectedFiles = Array.from(e.target.files || [])
+                                    setFiles(selectedFiles.slice(0, 3))
+                                }}
                                 hidden
                             />
                         </label>
+                        {files.length > 0 && (
+                            <div className="file-list">
+                                {files.map((file, i) => (
+                                    <div key={i} className="file-item">
+                                        <Shield size={12} className="logo-icon" />
+                                        <span>{file.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div className="input-group">
@@ -164,7 +180,7 @@ export default function App() {
 
                     <button
                         className={`action-btn ${isProcessing ? 'loading' : ''}`}
-                        disabled={!file || !password || isProcessing}
+                        disabled={files.length === 0 || !password || isProcessing}
                         onClick={handleAction}
                     >
                         {isProcessing ? 'Processando...' : (mode === 'encrypt' ? 'Proteger Arquivo' : 'Desbloquear Arquivo')}
