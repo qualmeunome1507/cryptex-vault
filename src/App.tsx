@@ -11,6 +11,8 @@ export default function App() {
     const [isProcessing, setIsProcessing] = useState(false)
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
     const [isDragging, setIsDragging] = useState(false)
+    const [progress, setProgress] = useState(0)
+    const [currentFileIndex, setCurrentFileIndex] = useState(-1)
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault()
@@ -59,11 +61,16 @@ export default function App() {
 
         setIsProcessing(true)
         setStatus(null)
+        setProgress(0)
 
         try {
-            for (const file of files) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i]
+                setCurrentFileIndex(i)
+                setProgress(0)
+
                 if (mode === 'encrypt') {
-                    const encryptedBlob = await encryptFile(file, password)
+                    const encryptedBlob = await encryptFile(file, password, (p) => setProgress(p))
                     const url = URL.createObjectURL(encryptedBlob)
                     const link = document.createElement('a')
                     link.href = url
@@ -73,7 +80,7 @@ export default function App() {
                     document.body.removeChild(link)
                     URL.revokeObjectURL(url)
                 } else {
-                    const decryptedFile = await decryptFile(file, password, file.name.replace('.ctx', ''), 'application/octet-stream')
+                    const decryptedFile = await decryptFile(file, password, file.name.replace('.ctx', ''), 'application/octet-stream', (p) => setProgress(p))
                     const url = URL.createObjectURL(decryptedFile)
                     const link = document.createElement('a')
                     link.href = url
@@ -89,6 +96,8 @@ export default function App() {
             setStatus({ type: 'error', message: err.message || 'Ocorreu um erro inesperado.' })
         } finally {
             setIsProcessing(false)
+            setCurrentFileIndex(-1)
+            setProgress(0)
         }
     }
 
@@ -146,8 +155,19 @@ export default function App() {
                             <div className="file-list">
                                 {files.map((file, i) => (
                                     <div key={i} className="file-item">
-                                        <Shield size={12} className="logo-icon" />
-                                        <span>{file.name}</span>
+                                        <div className="file-info">
+                                            <Shield size={12} className="logo-icon" />
+                                            <span>{file.name}</span>
+                                        </div>
+                                        {currentFileIndex === i && (
+                                            <div className="progress-container">
+                                                <motion.div
+                                                    className="progress-fill"
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${progress}%` }}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>

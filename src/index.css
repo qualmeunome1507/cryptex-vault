@@ -316,11 +316,31 @@ input:focus {
 
 .file-item {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
     font-size: 12px;
     color: var(--text-dim);
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.progress-container {
+    height: 2px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 1px;
+    overflow: hidden;
+    margin-left: 20px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--primary);
+    box-shadow: 0 0 5px var(--primary);
 }
 
 .file-item:not(:last-child) {
