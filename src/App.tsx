@@ -10,6 +10,28 @@ export default function App() {
     const [showPassword, setShowPassword] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
+    const [isDragging, setIsDragging] = useState(false)
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (e.type === 'dragover' || e.type === 'dragenter') {
+            setIsDragging(true)
+        } else if (e.type === 'dragleave') {
+            setIsDragging(false)
+        }
+    }
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsDragging(false)
+
+        const droppedFiles = Array.from(e.dataTransfer.files)
+        if (droppedFiles.length > 0) {
+            setFiles(droppedFiles.slice(0, 3))
+        }
+    }
 
     const getPasswordStrength = (pass: string) => {
         if (!pass) return { score: 0, label: '', color: 'transparent' }
@@ -98,7 +120,14 @@ export default function App() {
 
                 <main className="form-area">
                     <div className="input-group">
-                        <label htmlFor="file-upload" className="drop-zone">
+                        <label
+                            htmlFor="file-upload"
+                            className={`drop-zone ${isDragging ? 'dragging' : ''}`}
+                            onDragOver={handleDrag}
+                            onDragEnter={handleDrag}
+                            onDragLeave={handleDrag}
+                            onDrop={handleDrop}
+                        >
                             <FileUp className="drop-icon" />
                             <span>{files.length > 0 ? `${files.length} arquivo(s) selecionado(s)` : 'Selecione ou arraste até 3 arquivos'}</span>
                             <span className="limit-notice">(Máximo de 3 arquivos por vez)</span>
