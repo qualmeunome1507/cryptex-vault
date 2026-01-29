@@ -126,6 +126,13 @@ h1 {
     background: rgba(0, 242, 255, 0.05);
 }
 
+.drop-zone.dragging {
+    background: rgba(0, 242, 255, 0.1);
+    border-color: var(--primary);
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);
+    transform: scale(1.02);
+}
+
 .drop-icon {
     margin-bottom: 12px;
     color: var(--text-dim);
