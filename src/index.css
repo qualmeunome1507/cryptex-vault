@@ -262,3 +262,32 @@ input:focus {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 3px;
 }
+
+.strength-meter {
+    margin-top: -8px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.strength-bar-bg {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.strength-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    box-shadow: 0 0 8px currentColor;
+}
+
+.strength-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-align: right;
+}

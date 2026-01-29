@@ -11,6 +11,27 @@ export default function App() {
     const [isProcessing, setIsProcessing] = useState(false)
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
 
+    const getPasswordStrength = (pass: string) => {
+        if (!pass) return { score: 0, label: '', color: 'transparent' }
+        let score = 0
+        if (pass.length > 8) score++
+        if (pass.length > 12) score++
+        if (/[A-Z]/.test(pass)) score++
+        if (/[0-9]/.test(pass)) score++
+        if (/[^A-Za-z0-9]/.test(pass)) score++
+
+        const states = [
+            { label: 'Muito Fraca', color: '#ff3e3e' },
+            { label: 'Fraca', color: '#ff9d3e' },
+            { label: 'Média', color: '#ffd53e' },
+            { label: 'Forte', color: '#00ff88' },
+            { label: 'Inabalável', color: '#00f2ff' }
+        ]
+        return { score, ...states[Math.min(score, 4)] }
+    }
+
+    const passwordStrength = getPasswordStrength(password)
+
     const handleAction = async () => {
         if (!file || !password) return
 
@@ -104,6 +125,27 @@ export default function App() {
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>
+                        {password && mode === 'encrypt' && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                className="strength-meter"
+                            >
+                                <div className="strength-bar-bg">
+                                    <motion.div
+                                        className="strength-bar-fill"
+                                        animate={{
+                                            width: `${(passwordStrength.score / 5) * 100}%`,
+                                            backgroundColor: passwordStrength.color
+                                        }}
+                                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                    />
+                                </div>
+                                <span className="strength-label" style={{ color: passwordStrength.color }}>
+                                    Força: {passwordStrength.label}
+                                </span>
+                            </motion.div>
+                        )}
                     </div>
 
                     <AnimatePresence>
