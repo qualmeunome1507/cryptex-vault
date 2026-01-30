@@ -312,6 +312,35 @@ export default function App() {
                 </footer>
             </div>
 
+            <section className="seo-content-section">
+                <div className="seo-grid">
+                    <div className="seo-card">
+                        <Shield className="seo-icon" />
+                        <h3>AES-256-GCM</h3>
+                        <p>Criptografia de nível bancário e governamental. Seus arquivos são protegidos pelo algoritmo mais seguro do mundo.</p>
+                    </div>
+                    <div className="seo-card">
+                        <Unlock className="seo-icon" />
+                        <h3>Privacidade Total</h3>
+                        <p>100% Offline. O processamento ocorre inteiramente no seu navegador. Seus dados nunca tocam nossos servidores.</p>
+                    </div>
+                    <div className="seo-card">
+                        <ImageIcon className="seo-icon" />
+                        <h3>Modo Camuflagem</h3>
+                        <p>Esconda seus segredos dentro de imagens PNG comuns. Invisibility através da esteganografia avançada.</p>
+                    </div>
+                    <div className="seo-card">
+                        <Sparkles className="seo-icon" />
+                        <h3>Alta Performance</h3>
+                        <p>Suporte a arquivos grandes através de processamento por blocos (streaming), garantindo rapidez e estabilidade.</p>
+                    </div>
+                </div>
+                <div className="seo-footer-text">
+                    <h2>O seu Cofre Digital Privado</h2>
+                    <p>O Cryptex Vault foi desenvolvido para quem não abre mão da segurança absoluta. Utilize nossa ferramenta para proteger documentos sensíveis, fotos pessoais e backups importantes sem depender de terceiros ou conexões de rede.</p>
+                </div>
+            </section>
+
             <AnimatePresence>
                 {showLegal && (
                     <motion.div

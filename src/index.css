@@ -35,9 +35,79 @@ body {
     max-width: 600px;
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 48px;
     position: relative;
     z-index: 10;
+}
+
+.seo-content-section {
+    width: 100%;
+    color: var(--text);
+    text-align: center;
+}
+
+.seo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.seo-card {
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 24px;
+    text-align: left;
+    transition: transform 0.3s ease;
+}
+
+.seo-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(0, 242, 255, 0.2);
+}
+
+.seo-icon {
+    color: var(--primary);
+    margin-bottom: 16px;
+    width: 24px;
+    height: 24px;
+}
+
+.seo-card h3 {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: var(--text);
+}
+
+.seo-card p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+
+.seo-footer-text {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.seo-footer-text h2 {
+    font-size: 20px;
+    margin-bottom: 16px;
+    color: var(--primary);
+}
+
+.seo-footer-text p {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+    .seo-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .ad-container {
