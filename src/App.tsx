@@ -142,16 +142,23 @@ export default function App() {
     return (
         <div className="app-container">
             <div className="ad-container top-ad">
-                <div className="ad-placeholder">Espaço para Anúncio (Banner Superior)</div>
+                <div className="ad-placeholder">{t('ad_top')}</div>
             </div>
 
             <div className="glass-panel main-vault">
                 <header className="header">
+                    <div className="header-top">
+                        <div className="language-switcher">
+                            <button onClick={() => setLang('pt')} className={lang === 'pt' ? 'active' : ''}>PT</button>
+                            <button onClick={() => setLang('en')} className={lang === 'en' ? 'active' : ''}>EN</button>
+                            <button onClick={() => setLang('es')} className={lang === 'es' ? 'active' : ''}>ES</button>
+                        </div>
+                    </div>
                     <div className="logo">
                         <Shield className="logo-icon" />
-                        <h1>Cryptex Vault</h1>
+                        <h1>{t('title')}</h1>
                     </div>
-                    <p className="subtitle">Criptografia AES-256-GCM Grau Militar</p>
+                    <p className="subtitle">{t('subtitle')}</p>
                 </header>
 
                 <div className="mode-selector">
@@ -159,13 +166,13 @@ export default function App() {
                         className={mode === 'encrypt' ? 'active' : ''}
                         onClick={() => setMode('encrypt')}
                     >
-                        <Lock size={18} /> Criptografar
+                        <Lock size={18} /> {t('encrypt')}
                     </button>
                     <button
                         className={mode === 'decrypt' ? 'active' : ''}
                         onClick={() => setMode('decrypt')}
                     >
-                        <Unlock size={18} /> Decriptografar
+                        <Unlock size={18} /> {t('decrypt')}
                     </button>
                 </div>
 
@@ -180,8 +187,8 @@ export default function App() {
                             onDrop={handleDrop}
                         >
                             <FileUp className="drop-icon" />
-                            <span>{files.length > 0 ? `${files.length} arquivo(s) selecionado(s)` : 'Selecione ou arraste até 3 arquivos'}</span>
-                            <span className="limit-notice">(Máximo de 3 arquivos por vez)</span>
+                            <span>{files.length > 0 ? `${files.length} arquivo(s) selecionado(s)` : t('select_files')}</span>
+                            <span className="limit-notice">{t('max_files')}</span>
                             <input
                                 id="file-upload"
                                 type="file"
@@ -223,7 +230,7 @@ export default function App() {
                         <div className="password-wrapper">
                             <input
                                 type={showPassword ? "text" : "password"}
-                                placeholder="Senha de segurança"
+                                placeholder={t('password_placeholder')}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
@@ -252,10 +259,10 @@ export default function App() {
                                     />
                                 </div>
                                 <span className="strength-label" style={{ color: passwordStrength.color }}>
-                                    Força: {passwordStrength.label}
+                                    Força: {t(passwordStrength.label.toLowerCase().includes('fraca') ? 'strength_weak' : passwordStrength.label.toLowerCase().includes('média') ? 'strength_medium' : 'strength_strong' as any)}
                                 </span>
                                 {passwordStrength.score < 3 && (
-                                    <span className="strength-hint">A senha deve ser pelo menos "Média"</span>
+                                    <span className="strength-hint">{t('strength_hint')}</span>
                                 )}
                             </motion.div>
                         )}
@@ -270,8 +277,8 @@ export default function App() {
                                 <div className="toggle-content">
                                     <Sparkles size={16} className={isCamouflageMode ? 'pulse' : ''} />
                                     <div className="text-left">
-                                        <span className="toggle-title">Modo Camuflagem</span>
-                                        <span className="toggle-hint">Esconder o vault dentro de uma imagem PNG</span>
+                                        <span className="toggle-title">{t('camouflage_mode')}</span>
+                                        <span className="toggle-hint">{t('camouflage_desc')}</span>
                                     </div>
                                 </div>
                                 <div className="toggle-switch">
@@ -300,7 +307,7 @@ export default function App() {
                             className="action-btn secondary"
                             onClick={resetVault}
                         >
-                            Limpar e Novo Arquivo
+                            {t('clear_new')}
                         </button>
                     ) : (
                         <button
@@ -308,7 +315,7 @@ export default function App() {
                             disabled={files.length === 0 || !password || isProcessing}
                             onClick={handleAction}
                         >
-                            {isProcessing ? 'Processando...' : (mode === 'encrypt' ? 'Proteger Arquivo' : 'Desbloquear Arquivo')}
+                            {isProcessing ? t('processing') : (mode === 'encrypt' ? t('action_encrypt') : t('action_decrypt'))}
                         </button>
                     )}
                 </main>
@@ -389,7 +396,7 @@ export default function App() {
             </AnimatePresence>
 
             <div className="ad-container bottom-ad">
-                <div className="ad-placeholder">Espaço para Anúncio (Banner Inferior)</div>
+                <div className="ad-placeholder">{t('ad_bottom')}</div>
             </div>
 
             <div className="background-decor">
