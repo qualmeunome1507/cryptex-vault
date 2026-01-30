@@ -87,8 +87,7 @@ export default function App() {
                     const url = URL.createObjectURL(encryptedBlob)
                     const link = document.createElement('a')
                     link.href = url
-                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-                    link.download = isCamouflageMode ? `vault_${timestamp}_${i}.png` : `vault_${timestamp}_${i}.ctx`
+                    link.download = isCamouflageMode ? `IMAGEM ${i + 1}.png` : `IMAGEM ${i + 1}.ctx`
                     document.body.appendChild(link)
                     link.click()
                     document.body.removeChild(link)
