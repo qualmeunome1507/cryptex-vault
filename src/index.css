@@ -188,6 +188,17 @@ input:focus {
     margin-top: 8px;
 }
 
+.action-btn.secondary {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text);
+}
+
+.action-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
 .action-btn:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4);
@@ -329,12 +340,26 @@ input:focus {
     gap: 8px;
 }
 
+.progress-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 20px;
+}
+
 .progress-container {
+    flex: 1;
     height: 2px;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 1px;
     overflow: hidden;
-    margin-left: 20px;
+}
+
+.progress-text {
+    font-size: 10px;
+    color: var(--primary);
+    font-weight: 700;
+    min-width: 25px;
 }
 
 .progress-fill {

@@ -13,6 +13,7 @@ export default function App() {
     const [isDragging, setIsDragging] = useState(false)
     const [progress, setProgress] = useState(0)
     const [currentFileIndex, setCurrentFileIndex] = useState(-1)
+    const [isDone, setIsDone] = useState(false)
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault()
@@ -62,6 +63,7 @@ export default function App() {
         setIsProcessing(true)
         setStatus(null)
         setProgress(0)
+        setIsDone(false)
 
         try {
             for (let i = 0; i < files.length; i++) {
@@ -92,6 +94,7 @@ export default function App() {
                 }
             }
             setStatus({ type: 'success', message: `${files.length} arquivo(s) processado(s) com sucesso!` })
+            setIsDone(true)
         } catch (err: any) {
             setStatus({ type: 'error', message: err.message || 'Ocorreu um erro inesperado.' })
         } finally {
@@ -99,6 +102,15 @@ export default function App() {
             setCurrentFileIndex(-1)
             setProgress(0)
         }
+    }
+
+    const resetVault = () => {
+        setFiles([])
+        setPassword('')
+        setStatus(null)
+        setIsDone(false)
+        setCurrentFileIndex(-1)
+        setProgress(0)
     }
 
     return (
@@ -160,12 +172,15 @@ export default function App() {
                                             <span>{file.name}</span>
                                         </div>
                                         {currentFileIndex === i && (
-                                            <div className="progress-container">
-                                                <motion.div
-                                                    className="progress-fill"
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${progress}%` }}
-                                                />
+                                            <div className="progress-wrapper">
+                                                <div className="progress-container">
+                                                    <motion.div
+                                                        className="progress-fill"
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${progress}%` }}
+                                                    />
+                                                </div>
+                                                <span className="progress-text">{Math.round(progress)}%</span>
                                             </div>
                                         )}
                                     </div>
@@ -227,13 +242,22 @@ export default function App() {
                         )}
                     </AnimatePresence>
 
-                    <button
-                        className={`action-btn ${isProcessing ? 'loading' : ''}`}
-                        disabled={files.length === 0 || !password || isProcessing}
-                        onClick={handleAction}
-                    >
-                        {isProcessing ? 'Processando...' : (mode === 'encrypt' ? 'Proteger Arquivo' : 'Desbloquear Arquivo')}
-                    </button>
+                    {isDone ? (
+                        <button
+                            className="action-btn secondary"
+                            onClick={resetVault}
+                        >
+                            Limpar e Novo Arquivo
+                        </button>
+                    ) : (
+                        <button
+                            className={`action-btn ${isProcessing ? 'loading' : ''}`}
+                            disabled={files.length === 0 || !password || isProcessing}
+                            onClick={handleAction}
+                        >
+                            {isProcessing ? 'Processando...' : (mode === 'encrypt' ? 'Proteger Arquivo' : 'Desbloquear Arquivo')}
+                        </button>
+                    )}
                 </main>
 
                 <footer className="footer-info">
