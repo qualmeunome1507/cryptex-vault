@@ -127,6 +127,10 @@ export default function App() {
 
     return (
         <div className="app-container">
+            <div className="ad-container top-ad">
+                <div className="ad-placeholder">Espaço para Anúncio (Banner Superior)</div>
+            </div>
+
             <div className="glass-panel main-vault">
                 <header className="header">
                     <div className="logo">
@@ -298,6 +302,10 @@ export default function App() {
                 <footer className="footer-info">
                     <p>Tudo processado offline. Seus dados nunca saem do navegador.</p>
                 </footer>
+            </div>
+
+            <div className="ad-container bottom-ad">
+                <div className="ad-placeholder">Espaço para Anúncio (Banner Inferior)</div>
             </div>
 
             <div className="background-decor">
