@@ -151,8 +151,12 @@ export default function App() {
             }
             setStatus({ type: 'success', message: `${files.length} arquivo(s) processado(s) com sucesso!` })
             setIsDone(true)
+            // One-Shot Policy: Clear password after success
+            setPassword('')
         } catch (err: any) {
             setStatus({ type: 'error', message: err.message || 'Ocorreu um erro inesperado.' })
+            // Also clear password on error to be safe
+            setPassword('')
         } finally {
             setIsProcessing(false)
             setCurrentFileIndex(-1)
