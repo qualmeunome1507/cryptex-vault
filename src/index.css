@@ -310,6 +310,15 @@ input:focus {
     text-align: right;
 }
 
+.strength-hint {
+    font-size: 10px;
+    color: var(--error);
+    opacity: 0.8;
+    text-align: right;
+    display: block;
+    margin-top: 2px;
+}
+
 .limit-notice {
     font-size: 11px;
     color: var(--text-dim);

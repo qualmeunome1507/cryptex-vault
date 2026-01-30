@@ -60,6 +60,11 @@ export default function App() {
     const handleAction = async () => {
         if (files.length === 0 || !password) return
 
+        if (passwordStrength.score < 3) {
+            setStatus({ type: 'error', message: 'Por favor, use uma senha mais forte (Média ou superior).' })
+            return
+        }
+
         setIsProcessing(true)
         setStatus(null)
         setProgress(0)
@@ -76,13 +81,14 @@ export default function App() {
                     const url = URL.createObjectURL(encryptedBlob)
                     const link = document.createElement('a')
                     link.href = url
-                    link.download = `${file.name}.ctx`
+                    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+                    link.download = `vault_${timestamp}_${i}.ctx`
                     document.body.appendChild(link)
                     link.click()
                     document.body.removeChild(link)
                     URL.revokeObjectURL(url)
                 } else {
-                    const decryptedFile = await decryptFile(file, password, file.name.replace('.ctx', ''), 'application/octet-stream', (p) => setProgress(p))
+                    const decryptedFile = await decryptFile(file, password, (p) => setProgress(p))
                     const url = URL.createObjectURL(decryptedFile)
                     const link = document.createElement('a')
                     link.href = url
@@ -224,6 +230,9 @@ export default function App() {
                                 <span className="strength-label" style={{ color: passwordStrength.color }}>
                                     Força: {passwordStrength.label}
                                 </span>
+                                {passwordStrength.score < 3 && (
+                                    <span className="strength-hint">A senha deve ser pelo menos "Média"</span>
+                                )}
                             </motion.div>
                         )}
                     </div>

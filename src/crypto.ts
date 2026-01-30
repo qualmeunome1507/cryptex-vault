@@ -4,7 +4,7 @@
  * Supports large files via chunked processing.
  */
 
-const ITERATIONS = 100000;
+const ITERATIONS = 600000;
 const SALT_LENGTH = 16;
 const IV_LENGTH = 12;
 const ALGO = 'AES-GCM';
@@ -54,7 +54,7 @@ function incrementIV(iv: Uint8Array, chunkIndex: number) {
 }
 
 /**
- * Encrypts a File in chunks.
+ * Encrypts a File in chunks with encrypted metadata.
  */
 export async function encryptFile(
     file: File,
@@ -66,6 +66,28 @@ export async function encryptFile(
     const key = await deriveKey(password, salt);
 
     const encryptedChunks: BlobPart[] = [salt, iv];
+
+    // 1. Encrypt Metadata
+    const metadata = JSON.stringify({
+        name: file.name,
+        type: file.type || 'application/octet-stream'
+    });
+    const metadataEncoder = new TextEncoder();
+    const metadataData = metadataEncoder.encode(metadata);
+
+    // Using a special IV for metadata or just incrementing? Let's use incrementIV with index -1 for header if we want to be fancy, 
+    // but for simplicity and robustness we'll use index 0 and start file chunks from 1.
+    const metadataIv = incrementIV(iv, 0);
+    const encryptedMetadata = await crypto.subtle.encrypt(
+        { name: ALGO, iv: metadataIv as any },
+        key,
+        metadataData
+    );
+
+    // Prefix metadata length (4 bytes) + encrypted metadata
+    const metaSize = new Uint32Array([encryptedMetadata.byteLength]);
+    encryptedChunks.push(metaSize, encryptedMetadata);
+
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
     for (let i = 0; i < totalChunks; i++) {
@@ -73,7 +95,8 @@ export async function encryptFile(
         const end = Math.min(start + CHUNK_SIZE, file.size);
         const chunk = await file.slice(start, end).arrayBuffer();
 
-        const chunkIv = incrementIV(iv, i);
+        // Data chunks start from index 1 to avoid IV reuse with metadata
+        const chunkIv = incrementIV(iv, i + 1);
         const encryptedChunk = await crypto.subtle.encrypt(
             { name: ALGO, iv: chunkIv as any },
             key,
@@ -88,25 +111,44 @@ export async function encryptFile(
 }
 
 /**
- * Decrypts an encrypted File/Blob in chunks.
+ * Decrypts an encrypted File/Blob in chunks and restores original metadata.
  */
 export async function decryptFile(
     encryptedBlob: Blob,
     password: string,
-    originalFileName: string,
-    originalFileType: string,
     onProgress?: (progress: number) => void
 ): Promise<File> {
-    const headerBuffer = await encryptedBlob.slice(0, SALT_LENGTH + IV_LENGTH).arrayBuffer();
+    const headerSize = SALT_LENGTH + IV_LENGTH;
+    const headerBuffer = await encryptedBlob.slice(0, headerSize).arrayBuffer();
     const salt = new Uint8Array(headerBuffer.slice(0, SALT_LENGTH));
     const iv = new Uint8Array(headerBuffer.slice(SALT_LENGTH));
 
     const key = await deriveKey(password, salt);
-    const decryptedChunks: BlobPart[] = [];
 
-    // Each encrypted chunk is CHUNK_SIZE + 16 bytes (auth tag)
+    // 2. Decrypt Metadata
+    const metaLengthBuffer = await encryptedBlob.slice(headerSize, headerSize + 4).arrayBuffer();
+    const metadataLength = new Uint32Array(metaLengthBuffer)[0];
+
+    const encryptedMetadata = await encryptedBlob.slice(headerSize + 4, headerSize + 4 + metadataLength).arrayBuffer();
+    const metadataIv = incrementIV(iv, 0);
+
+    let originalMetadata: { name: string, type: string };
+    try {
+        const decryptedMetadata = await crypto.subtle.decrypt(
+            { name: ALGO, iv: metadataIv as any },
+            key,
+            encryptedMetadata
+        );
+        const decoder = new TextDecoder();
+        originalMetadata = JSON.parse(decoder.decode(decryptedMetadata));
+    } catch (e) {
+        throw new Error('Falha na decriptação. Senha incorreta ou arquivo corrompido.');
+    }
+
+    const decryptedChunks: BlobPart[] = [];
     const ENCRYPTED_CHUNK_SIZE = CHUNK_SIZE + 16;
-    const bodyBlob = encryptedBlob.slice(SALT_LENGTH + IV_LENGTH);
+    const dataStart = headerSize + 4 + metadataLength;
+    const bodyBlob = encryptedBlob.slice(dataStart);
     const totalChunks = Math.ceil(bodyBlob.size / ENCRYPTED_CHUNK_SIZE);
 
     try {
@@ -115,7 +157,7 @@ export async function decryptFile(
             const end = Math.min(start + ENCRYPTED_CHUNK_SIZE, bodyBlob.size);
             const encryptedChunk = await bodyBlob.slice(start, end).arrayBuffer();
 
-            const chunkIv = incrementIV(iv, i);
+            const chunkIv = incrementIV(iv, i + 1);
             const decryptedChunk = await crypto.subtle.decrypt(
                 { name: ALGO, iv: chunkIv as any },
                 key,
@@ -125,8 +167,8 @@ export async function decryptFile(
             decryptedChunks.push(decryptedChunk);
             if (onProgress) onProgress(((i + 1) / totalChunks) * 100);
         }
-        return new File(decryptedChunks, originalFileName, { type: originalFileType });
+        return new File(decryptedChunks, originalMetadata.name, { type: originalMetadata.type });
     } catch (error) {
-        throw new Error('Falha na decriptação. Senha incorreta ou arquivo corrompido.');
+        throw new Error('Falha na decriptação dos dados. Arquivo pode estar incompleto.');
     }
 }
