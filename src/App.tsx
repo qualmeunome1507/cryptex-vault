@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Shield, Unlock, Lock, FileUp, Download, Eye, EyeOff, AlertCircle, CheckCircle2, Image as ImageIcon, Sparkles, FileText, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { encryptFile, decryptFile, wrapInImage, unwrapFromImage } from './crypto'
-import { PRIVACY_POLICY } from './LegalContent'
+import { LEGAL_CONTENT } from './LegalContent'
+import { translations, Language } from './i18n'
+import { Languages } from 'lucide-react'
 
 export default function App() {
     const [mode, setMode] = useState<'encrypt' | 'decrypt'>('encrypt')
@@ -17,6 +19,16 @@ export default function App() {
     const [isDone, setIsDone] = useState(false)
     const [isCamouflageMode, setIsCamouflageMode] = useState(false)
     const [showLegal, setShowLegal] = useState(false)
+    const [lang, setLang] = useState<Language>(() => {
+        const saved = localStorage.getItem('cryptex-lang') as Language
+        return saved || (navigator.language.startsWith('pt') ? 'pt' : navigator.language.startsWith('es') ? 'es' : 'en')
+    })
+
+    const t = (key: keyof typeof translations['pt']) => translations[lang][key]
+
+    useEffect(() => {
+        localStorage.setItem('cryptex-lang', lang)
+    }, [lang])
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault()
@@ -302,11 +314,11 @@ export default function App() {
                 </main>
 
                 <footer className="footer-info">
-                    <p>Tudo processado offline. Seus dados nunca saem do navegador.</p>
+                    <p>{t('offline_notice')}</p>
                     <div className="footer-links-legal">
                         <button onClick={() => setShowLegal(true)} className="legal-btn">
                             <FileText size={14} />
-                            Política de Privacidade & Termos
+                            {t('legal_links')}
                         </button>
                     </div>
                 </footer>
@@ -316,28 +328,28 @@ export default function App() {
                 <div className="seo-grid">
                     <div className="seo-card">
                         <Shield className="seo-icon" />
-                        <h3>AES-256-GCM</h3>
-                        <p>Criptografia de nível bancário e governamental. Seus arquivos são protegidos pelo algoritmo mais seguro do mundo.</p>
+                        <h3>{t('seo_card_aes_title')}</h3>
+                        <p>{t('seo_card_aes_desc')}</p>
                     </div>
                     <div className="seo-card">
                         <Unlock className="seo-icon" />
-                        <h3>Privacidade Total</h3>
-                        <p>100% Offline. O processamento ocorre inteiramente no seu navegador. Seus dados nunca tocam nossos servidores.</p>
+                        <h3>{t('seo_card_privacy_title')}</h3>
+                        <p>{t('seo_card_privacy_desc')}</p>
                     </div>
                     <div className="seo-card">
                         <ImageIcon className="seo-icon" />
-                        <h3>Modo Camuflagem</h3>
-                        <p>Esconda seus segredos dentro de imagens PNG comuns. Invisibility através da esteganografia avançada.</p>
+                        <h3>{t('seo_card_camouflage_title')}</h3>
+                        <p>{t('seo_card_camouflage_desc')}</p>
                     </div>
                     <div className="seo-card">
                         <Sparkles className="seo-icon" />
-                        <h3>Alta Performance</h3>
-                        <p>Suporte a arquivos grandes através de processamento por blocos (streaming), garantindo rapidez e estabilidade.</p>
+                        <h3>{t('seo_card_performance_title')}</h3>
+                        <p>{t('seo_card_performance_desc')}</p>
                     </div>
                 </div>
                 <div className="seo-footer-text">
-                    <h2>O seu Cofre Digital Privado</h2>
-                    <p>O Cryptex Vault foi desenvolvido para quem não abre mão da segurança absoluta. Utilize nossa ferramenta para proteger documentos sensíveis, fotos pessoais e backups importantes sem depender de terceiros ou conexões de rede.</p>
+                    <h2>{t('seo_footer_title')}</h2>
+                    <p>{t('seo_footer_desc')}</p>
                 </div>
             </section>
 
@@ -360,14 +372,16 @@ export default function App() {
                             <div className="modal-header">
                                 <div className="modal-title">
                                     <FileText className="primary-icon" />
-                                    <h2>Informações Legais</h2>
+                                    <h2>{t('legal_title')}</h2>
                                 </div>
                                 <button className="close-btn" onClick={() => setShowLegal(false)}>
                                     <X size={20} />
                                 </button>
                             </div>
                             <div className="modal-body">
-                                <div className="policy-text">{PRIVACY_POLICY}</div>
+                                <div className="policy-text">
+                                    {LEGAL_CONTENT[lang]}
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>
