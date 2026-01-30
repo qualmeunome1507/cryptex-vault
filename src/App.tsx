@@ -303,8 +303,47 @@ export default function App() {
 
                 <footer className="footer-info">
                     <p>Tudo processado offline. Seus dados nunca saem do navegador.</p>
+                    <div className="footer-links-legal">
+                        <button onClick={() => setShowLegal(true)} className="legal-btn">
+                            <FileText size={14} />
+                            Política de Privacidade & Termos
+                        </button>
+                    </div>
                 </footer>
             </div>
+
+            <AnimatePresence>
+                {showLegal && (
+                    <motion.div
+                        className="modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowLegal(false)}
+                    >
+                        <motion.div
+                            className="modal-content glass-panel"
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="modal-header">
+                                <div className="modal-title">
+                                    <FileText className="primary-icon" />
+                                    <h2>Informações Legais</h2>
+                                </div>
+                                <button className="close-btn" onClick={() => setShowLegal(false)}>
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="policy-text">{PRIVACY_POLICY}</div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <div className="ad-container bottom-ad">
                 <div className="ad-placeholder">Espaço para Anúncio (Banner Inferior)</div>
