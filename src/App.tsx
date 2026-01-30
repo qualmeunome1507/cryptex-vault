@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Shield, Unlock, Lock, FileUp, Download, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Shield, Unlock, Lock, FileUp, Download, Eye, EyeOff, AlertCircle, CheckCircle2, Image as ImageIcon, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { encryptFile, decryptFile } from './crypto'
+import { encryptFile, decryptFile, wrapInImage, unwrapFromImage } from './crypto'
 
 export default function App() {
     const [mode, setMode] = useState<'encrypt' | 'decrypt'>('encrypt')
@@ -14,6 +14,7 @@ export default function App() {
     const [progress, setProgress] = useState(0)
     const [currentFileIndex, setCurrentFileIndex] = useState(-1)
     const [isDone, setIsDone] = useState(false)
+    const [isCamouflageMode, setIsCamouflageMode] = useState(false)
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault()
@@ -77,18 +78,24 @@ export default function App() {
                 setProgress(0)
 
                 if (mode === 'encrypt') {
-                    const encryptedBlob = await encryptFile(file, password, (p) => setProgress(p))
+                    let encryptedBlob = await encryptFile(file, password, (p) => setProgress(p))
+
+                    if (isCamouflageMode) {
+                        encryptedBlob = await wrapInImage(encryptedBlob, '/cryptex-vault/carrier.png')
+                    }
+
                     const url = URL.createObjectURL(encryptedBlob)
                     const link = document.createElement('a')
                     link.href = url
                     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-                    link.download = `vault_${timestamp}_${i}.ctx`
+                    link.download = isCamouflageMode ? `vault_${timestamp}_${i}.png` : `vault_${timestamp}_${i}.ctx`
                     document.body.appendChild(link)
                     link.click()
                     document.body.removeChild(link)
                     URL.revokeObjectURL(url)
                 } else {
-                    const decryptedFile = await decryptFile(file, password, (p) => setProgress(p))
+                    const unwrappedBlob = await unwrapFromImage(file)
+                    const decryptedFile = await decryptFile(unwrappedBlob, password, (p) => setProgress(p))
                     const url = URL.createObjectURL(decryptedFile)
                     const link = document.createElement('a')
                     link.href = url
@@ -236,6 +243,26 @@ export default function App() {
                             </motion.div>
                         )}
                     </div>
+
+                    {mode === 'encrypt' && (
+                        <div className="input-group">
+                            <button
+                                className={`camouflage-toggle ${isCamouflageMode ? 'active' : ''}`}
+                                onClick={() => setIsCamouflageMode(!isCamouflageMode)}
+                            >
+                                <div className="toggle-content">
+                                    <Sparkles size={16} className={isCamouflageMode ? 'pulse' : ''} />
+                                    <div className="text-left">
+                                        <span className="toggle-title">Modo Camuflagem</span>
+                                        <span className="toggle-hint">Esconder o vault dentro de uma imagem PNG</span>
+                                    </div>
+                                </div>
+                                <div className="toggle-switch">
+                                    <div className="switch-thumb"></div>
+                                </div>
+                            </button>
+                        </div>
+                    )}
 
                     <AnimatePresence>
                         {status && (

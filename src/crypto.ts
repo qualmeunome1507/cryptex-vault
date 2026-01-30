@@ -9,6 +9,9 @@ const SALT_LENGTH = 16;
 const IV_LENGTH = 12;
 const ALGO = 'AES-GCM';
 const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
+const MAGIC = 'CRYPTEXV';
+const MAGIC_BYTES = new TextEncoder().encode(MAGIC);
+const FOOTER_SIZE = 12; // 4 bytes for length + 8 bytes for MAGIC
 
 /**
  * Derives a cryptographic key from a password.
@@ -171,4 +174,48 @@ export async function decryptFile(
     } catch (error) {
         throw new Error('Falha na decriptação dos dados. Arquivo pode estar incompleto.');
     }
+}
+
+/**
+ * Wraps an encrypted Blob into a carrier PNG image.
+ */
+export async function wrapInImage(encryptedBlob: Blob, carrierUrl: string): Promise<Blob> {
+    const response = await fetch(carrierUrl);
+    const carrierBuffer = await response.arrayBuffer();
+    const payloadBuffer = await encryptedBlob.arrayBuffer();
+
+    const footer = new Uint8Array(FOOTER_SIZE);
+    const view = new DataView(footer.buffer);
+    view.setUint32(0, payloadBuffer.byteLength, true); // Little endian
+    footer.set(MAGIC_BYTES, 4);
+
+    return new Blob([carrierBuffer, payloadBuffer, footer], { type: 'image/png' });
+}
+
+/**
+ * Unwraps an encrypted Blob from a carrier PNG image.
+ */
+export async function unwrapFromImage(imageBlob: Blob): Promise<Blob> {
+    const buffer = await imageBlob.arrayBuffer();
+    const view = new DataView(buffer);
+
+    if (buffer.byteLength < FOOTER_SIZE) {
+        throw new Error('Arquivo muito pequeno para ser um Vault camuflado.');
+    }
+
+    // Check magic
+    const marker = new Uint8Array(buffer.slice(-8));
+    if (new TextDecoder().decode(marker) !== MAGIC) {
+        // If no magic, assume it's a standard .ctx file
+        return imageBlob;
+    }
+
+    const payloadLength = view.getUint32(buffer.byteLength - FOOTER_SIZE, true);
+    const payloadStart = buffer.byteLength - FOOTER_SIZE - payloadLength;
+
+    if (payloadStart < 0) {
+        throw new Error('Formato de camuflagem inválido ou corrompido.');
+    }
+
+    return new Blob([buffer.slice(payloadStart, payloadStart + payloadLength)], { type: 'application/octet-stream' });
 }
