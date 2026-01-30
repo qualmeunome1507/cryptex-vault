@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Shield, Unlock, Lock, FileUp, Download, Eye, EyeOff, AlertCircle, CheckCircle2, Image as ImageIcon, Sparkles } from 'lucide-react'
+import { Shield, Unlock, Lock, FileUp, Download, Eye, EyeOff, AlertCircle, CheckCircle2, Image as ImageIcon, Sparkles, FileText, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { encryptFile, decryptFile, wrapInImage, unwrapFromImage } from './crypto'
+import { PRIVACY_POLICY } from './LegalContent'
 
 export default function App() {
     const [mode, setMode] = useState<'encrypt' | 'decrypt'>('encrypt')
@@ -15,6 +16,7 @@ export default function App() {
     const [currentFileIndex, setCurrentFileIndex] = useState(-1)
     const [isDone, setIsDone] = useState(false)
     const [isCamouflageMode, setIsCamouflageMode] = useState(false)
+    const [showLegal, setShowLegal] = useState(false)
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault()
