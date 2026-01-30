@@ -30,6 +30,36 @@ export default function App() {
         localStorage.setItem('cryptex-lang', lang)
     }, [lang])
 
+    // Auto-Wipe Timer (5 minutes of inactivity)
+    useEffect(() => {
+        let timer: ReturnType<typeof setTimeout>
+
+        const resetTimer = () => {
+            if (timer) clearTimeout(timer)
+            timer = setTimeout(() => {
+                // Only wipe if there is something to clear
+                if (files.length > 0 || password || status) {
+                    resetVault()
+                    setStatus({ type: 'error', message: t('auto_wipe_notice') })
+                }
+            }, 5 * 60 * 1000)
+        }
+
+        const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart']
+        activityEvents.forEach(event => {
+            document.addEventListener(event, resetTimer)
+        })
+
+        resetTimer()
+
+        return () => {
+            if (timer) clearTimeout(timer)
+            activityEvents.forEach(event => {
+                document.removeEventListener(event, resetTimer)
+            })
+        }
+    }, [files.length, password, status, lang])
+
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault()
         e.stopPropagation()

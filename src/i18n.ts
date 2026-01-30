@@ -34,6 +34,7 @@ export const translations = {
         seo_footer_desc: "O Cryptex Vault foi desenvolvido para quem não abre mão da segurança absoluta. Utilize nossa ferramenta para proteger documentos sensíveis, fotos pessoais e backups importantes sem depender de terceiros ou conexões de rede.",
         ad_top: "Espaço para Anúncio (Banner Superior)",
         ad_bottom: "Espaço para Anúncio (Banner Inferior)",
+        auto_wipe_notice: "Vault limpo automaticamente por inatividade."
     },
     en: {
         title: "Cryptex Vault",
@@ -68,6 +69,7 @@ export const translations = {
         seo_footer_desc: "Cryptex Vault was developed for those who demand absolute security. Use our tool to protect sensitive documents, personal photos, and important backups without relying on third parties or network connections.",
         ad_top: "Ad Space (Top Banner)",
         ad_bottom: "Ad Space (Bottom Banner)",
+        auto_wipe_notice: "Vault cleared automatically due to inactivity."
     },
     es: {
         title: "Cryptex Vault",
@@ -102,5 +104,6 @@ export const translations = {
         seo_footer_desc: "Cryptex Vault fue desarrollado para quienes no renuncian a la seguridad absoluta. Utilice nuestra herramienta para proteger documentos sensibles, fotos personales y copias de seguridad importantes sin depender de terceros ni conexiones de red.",
         ad_top: "Espacio para Anuncios (Banner Superior)",
         ad_bottom: "Espacio para Anuncios (Banner Inferior)",
+        auto_wipe_notice: "Bóveda limpiada automáticamente por inactividad."
     }
 };
