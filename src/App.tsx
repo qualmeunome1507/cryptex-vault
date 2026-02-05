@@ -125,7 +125,7 @@ export default function App() {
                     let encryptedBlob = await encryptFile(file, password, (p) => setProgress(p))
 
                     if (isCamouflageMode) {
-                        encryptedBlob = await wrapInImage(encryptedBlob, '/cryptex-vault/carrier.png')
+                        encryptedBlob = await wrapInImage(encryptedBlob, '/carrier.png')
                     }
 
                     const url = URL.createObjectURL(encryptedBlob)
