@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://cryptexvault.com.br/sitemap.xml
