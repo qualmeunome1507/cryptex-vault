@@ -60,6 +60,43 @@ export default function App() {
         }
     }, [files.length, password, status, lang])
 
+    // Handle Shared Files from PWA
+    useEffect(() => {
+        const checkSharedFiles = async () => {
+            const params = new URLSearchParams(window.location.search)
+            if (params.get('action') === 'shared') {
+                try {
+                    const cache = await caches.open('cryptex-shared-files')
+                    const requests = await cache.keys()
+                    const sharedFiles: File[] = []
+
+                    for (const request of requests) {
+                        const response = await cache.match(request)
+                        if (response) {
+                            const blob = await response.blob()
+                            const name = response.headers.get('x-file-name') || 'shared-file'
+                            const type = response.headers.get('content-type') || 'application/octet-stream'
+                            sharedFiles.push(new File([blob], name, { type }))
+                            // Clean up
+                            await cache.delete(request)
+                        }
+                    }
+
+                    if (sharedFiles.length > 0) {
+                        setFiles(prev => [...prev, ...sharedFiles].slice(0, 3))
+                        setStatus({ type: 'success', message: t('files_received' as any) || 'Arquivos recebidos!' })
+
+                        // Clear URL params
+                        window.history.replaceState({}, '', window.location.pathname)
+                    }
+                } catch (e) {
+                    console.error('Error retrieving shared files:', e)
+                }
+            }
+        }
+        checkSharedFiles()
+    }, [t])
+
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault()
         e.stopPropagation()

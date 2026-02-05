@@ -8,8 +8,11 @@ export default defineConfig({
     plugins: [
         react(),
         VitePWA({
+            strategies: 'injectManifest',
+            srcDir: 'src',
+            filename: 'sw.ts',
             registerType: 'autoUpdate',
-            includeAssets: ['logo.png', 'icon-192.png', 'icon-512.png'],
+            includeAssets: ['logo.png', 'icon-192.png', 'icon-512.png', 'robots.txt', 'sitemap.xml'],
             manifest: {
                 name: 'Cryptex Vault',
                 short_name: 'Cryptex',
@@ -26,7 +29,23 @@ export default defineConfig({
                         sizes: '512x512',
                         type: 'image/png'
                     }
-                ]
+                ],
+                share_target: {
+                    action: "/share-target", // Must match the SW handler
+                    method: "POST",
+                    enctype: "multipart/form-data",
+                    params: {
+                        title: "name",
+                        text: "description",
+                        url: "link",
+                        files: [
+                            {
+                                name: "file",
+                                accept: ["*/*"]
+                            }
+                        ]
+                    }
+                }
             }
         })
     ],
