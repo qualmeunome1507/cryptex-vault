@@ -1,7 +1,7 @@
 /**
  * Cryptex Vault - Core Cryptography Module (Streaming Edition)
  * Uses Web Crypto API for secure, client-side encryption.
- * Supports large files via chunked processing.
+ * Supports large files via chunked processing and automatic GZIP compression.
  */
 
 const ITERATIONS = 600000;
@@ -12,6 +12,28 @@ const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
 const MAGIC = 'CRYPTEXV';
 const MAGIC_BYTES = new TextEncoder().encode(MAGIC);
 const FOOTER_SIZE = 12; // 4 bytes for length + 8 bytes for MAGIC
+
+// MIME types that are already compressed and shouldn't be compressed again
+const SKIPPED_COMPRESSION_TYPES = new Set([
+    'application/zip', 'application/gzip', 'application/x-rar-compressed',
+    'application/vnd.rar', 'application/x-7z-compressed',
+    'application/vnd.android.package-archive',
+    'application/pdf'
+]);
+
+/**
+ * Checks if a file should be compressed based on its MIME type.
+ */
+function shouldCompress(file: File): boolean {
+    if (!file.type) return true; // Assume text/compressible if unknown
+    if (SKIPPED_COMPRESSION_TYPES.has(file.type)) return false;
+    if (file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/')) {
+        // SVG is an image but text-based and compressible
+        if (file.type.includes('svg')) return true;
+        return false;
+    }
+    return true;
+}
 
 /**
  * Derives a cryptographic key from a password.
@@ -57,7 +79,7 @@ function incrementIV(iv: Uint8Array, chunkIndex: number) {
 }
 
 /**
- * Encrypts a File in chunks with encrypted metadata.
+ * Encrypts a File in chunks with encrypted metadata and optional compression.
  */
 export async function encryptFile(
     file: File,
@@ -68,18 +90,18 @@ export async function encryptFile(
     const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
     const key = await deriveKey(password, salt);
 
+    const useCompression = shouldCompress(file);
     const encryptedChunks: BlobPart[] = [salt, iv];
 
     // 1. Encrypt Metadata
     const metadata = JSON.stringify({
         name: file.name,
-        type: file.type || 'application/octet-stream'
+        type: file.type || 'application/octet-stream',
+        c: useCompression ? 1 : 0 // 'c' flag for compression
     });
     const metadataEncoder = new TextEncoder();
     const metadataData = metadataEncoder.encode(metadata);
 
-    // Using a special IV for metadata or just incrementing? Let's use incrementIV with index -1 for header if we want to be fancy, 
-    // but for simplicity and robustness we'll use index 0 and start file chunks from 1.
     const metadataIv = incrementIV(iv, 0);
     const encryptedMetadata = await crypto.subtle.encrypt(
         { name: ALGO, iv: metadataIv as any },
@@ -91,25 +113,73 @@ export async function encryptFile(
     const metaSize = new Uint32Array([encryptedMetadata.byteLength]);
     encryptedChunks.push(metaSize, encryptedMetadata);
 
-    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    let sourceStream = file.stream();
 
-    for (let i = 0; i < totalChunks; i++) {
-        const start = i * CHUNK_SIZE;
-        const end = Math.min(start + CHUNK_SIZE, file.size);
-        const chunk = await file.slice(start, end).arrayBuffer();
+    // Setup input counting for progress since we can't trust chunks count when compressing
+    let bytesRead = 0;
+    const totalBytes = file.size;
 
-        // Data chunks start from index 1 to avoid IV reuse with metadata
-        const chunkIv = incrementIV(iv, i + 1);
-        const encryptedChunk = await crypto.subtle.encrypt(
-            { name: ALGO, iv: chunkIv as any },
-            key,
-            chunk
-        );
+    const progressStream = new TransformStream({
+        transform(chunk, controller) {
+            bytesRead += chunk.length;
+            if (onProgress) {
+                // Reporting progress relative to input file reading
+                // Note: Encryption usually lags slightly behind reading
+                onProgress(Math.min((bytesRead / totalBytes) * 100, 99));
+            }
+            controller.enqueue(chunk);
+        }
+    });
 
-        encryptedChunks.push(encryptedChunk);
-        if (onProgress) onProgress(((i + 1) / totalChunks) * 100);
+    let readable = sourceStream.pipeThrough(progressStream);
+
+    if (useCompression) {
+        readable = readable.pipeThrough(new CompressionStream('gzip'));
     }
 
+    const reader = readable.getReader();
+    let idx = 1;
+    let buffer = new Uint8Array(0);
+
+    while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+            // Process remaining buffer
+            if (buffer.length > 0) {
+                const chunkIv = incrementIV(iv, idx);
+                const encryptedChunk = await crypto.subtle.encrypt(
+                    { name: ALGO, iv: chunkIv as any },
+                    key,
+                    buffer
+                );
+                encryptedChunks.push(encryptedChunk);
+            }
+            break;
+        }
+
+        // Append new data to buffer
+        const newBuffer = new Uint8Array(buffer.length + value.length);
+        newBuffer.set(buffer);
+        newBuffer.set(value, buffer.length);
+        buffer = newBuffer;
+
+        // Cut chunks of CHUNK_SIZE
+        while (buffer.length >= CHUNK_SIZE) {
+            const chunk = buffer.slice(0, CHUNK_SIZE);
+            buffer = buffer.slice(CHUNK_SIZE);
+
+            const chunkIv = incrementIV(iv, idx++);
+            const encryptedChunk = await crypto.subtle.encrypt(
+                { name: ALGO, iv: chunkIv as any },
+                key,
+                chunk
+            );
+            encryptedChunks.push(encryptedChunk);
+        }
+    }
+
+    if (onProgress) onProgress(100);
     return new Blob(encryptedChunks, { type: 'application/octet-stream' });
 }
 
@@ -135,7 +205,7 @@ export async function decryptFile(
     const encryptedMetadata = await encryptedBlob.slice(headerSize + 4, headerSize + 4 + metadataLength).arrayBuffer();
     const metadataIv = incrementIV(iv, 0);
 
-    let originalMetadata: { name: string, type: string };
+    let originalMetadata: { name: string, type: string, c?: number };
     try {
         const decryptedMetadata = await crypto.subtle.decrypt(
             { name: ALGO, iv: metadataIv as any },
@@ -170,9 +240,27 @@ export async function decryptFile(
             decryptedChunks.push(decryptedChunk);
             if (onProgress) onProgress(((i + 1) / totalChunks) * 100);
         }
-        return new File(decryptedChunks, originalMetadata.name, { type: originalMetadata.type });
-    } catch (error) {
-        throw new Error('Falha na decriptação dos dados. Arquivo pode estar incompleto.');
+
+        const assembledBlob = new Blob(decryptedChunks);
+
+        if (originalMetadata.c === 1) {
+            // Decompress
+            try {
+                const decompressedStream = assembledBlob.stream().pipeThrough(new DecompressionStream('gzip'));
+                // Consume the stream into a Blob
+                const response = new Response(decompressedStream);
+                const decompressedBlob = await response.blob();
+                return new File([decompressedBlob], originalMetadata.name, { type: originalMetadata.type });
+            } catch (err) {
+                console.error("Decompression failed", err);
+                throw new Error('Falha na descompressão (arquivo corrompido?)');
+            }
+        } else {
+            return new File([assembledBlob], originalMetadata.name, { type: originalMetadata.type });
+        }
+
+    } catch (error: any) {
+        throw new Error(error.message || 'Falha na decriptação dos dados. Arquivo pode estar incompleto.');
     }
 }
 
